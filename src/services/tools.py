@@ -2,6 +2,7 @@ import json
 
 from openai.types.responses import FunctionToolParam
 
+from src.services.internal_tools import search_history
 from src.services.orders import get_order
 
 TOOLS: list[FunctionToolParam] = [
@@ -18,23 +19,46 @@ TOOLS: list[FunctionToolParam] = [
             "additionalProperties": False
         }, 
         "strict": True
+    }, 
+    {
+        "type": "function", 
+        "name": "search_history", 
+        "description": (
+            "Search earlier messages and tool results"
+            "in the customer's current conversation."
+        ), 
+        "parameters": {
+            "type": "object", 
+            "properties": {
+                "query": {"type": "string"}
+            }, 
+            "required": ['query'], 
+            "additionalProperties": False
+        }, 
+        "strict": True
     }
 ]
 
-def execute_tools(calls):
+def is_this_a_tool(tool_name):
+    return tool_name in {tool['name'] for tool in TOOLS}
+
+def execute_tools(calls, conversation_id):
     results = []
     for call in calls:
         arguments = json.loads(call.arguments)
 
+        if not is_this_a_tool(call.name):
+            raise ValueError("we don't have that tool")
+
         if call.name == 'get_order':
             response = get_order(arguments['order_id'])
+        if call.name == 'search_history':
+            response = search_history(arguments['query'], conversation_id)
 
-            results.append({
-                "type": "function_call_output",
-                "call_id": call.call_id, 
-                "output": json.dumps(response)
-            })
-
-        else:
-            raise ValueError("we don't have that tool")
+        results.append({
+            "type": "function_call_output",
+            "call_id": call.call_id, 
+            "output": json.dumps(response)
+        })
+          
     return results

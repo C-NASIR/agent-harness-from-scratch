@@ -44,7 +44,7 @@ def run_agent(history, context, customer_message, conversation_id):
             save_conversations(conversation_id, history, context)
             return response.output_text
         
-        for result in execute_tools(calls):
+        for result in execute_tools(calls, conversation_id):
             history.append(result.copy())
             context.append(deepcopy(result))
     
