@@ -2,7 +2,7 @@ import json
 
 from openai.types.responses import FunctionToolParam
 
-from src.services.internal_tools import search_history
+from src.services.internal_tools import search_history, search_knowledge_base
 from src.services.orders import get_order
 
 TOOLS: list[FunctionToolParam] = [
@@ -36,6 +36,23 @@ TOOLS: list[FunctionToolParam] = [
             "additionalProperties": False
         }, 
         "strict": True
+    }, 
+    {
+        "type": "function", 
+        "name": "search_knowledge_base", 
+        "description": (
+            "Search official store policies and products"
+            "documentation to answer customer questions."
+        ), 
+        "parameters": {
+            "type": "object", 
+            "properties": {
+                "query": {"type": "string"}
+            }, 
+            "required": ['query'], 
+            "additionalProperties": False
+        }, 
+        "strict": True
     }
 ]
 
@@ -50,10 +67,13 @@ def execute_tools(calls, conversation_id):
         if not is_this_a_tool(call.name):
             raise ValueError("we don't have that tool")
 
+        print(f'we are using --> { call.name} tool')
         if call.name == 'get_order':
             response = get_order(arguments['order_id'])
         if call.name == 'search_history':
             response = search_history(arguments['query'], conversation_id)
+        if call.name == "search_knowledge_base":
+            response = search_knowledge_base(arguments['query'])
 
         results.append({
             "type": "function_call_output",

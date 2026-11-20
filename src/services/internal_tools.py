@@ -2,11 +2,25 @@ import json
 import re
 
 from src.services.conversations import load_conversation
+from src.services.knowledge_service import load_knowledge_articles
 
 
 def search_history(query, conversation_id):
     history, _ = load_conversation(conversation_id)
+    history = [event_text(event).lower() for event in history]
+    return keyword_matching_algorithm(query, history, 5)
 
+
+def search_knowledge_base(query):
+    articles = load_knowledge_articles()
+    articles = [
+        f"{title} {body}".lower()
+        for _, title, body in articles
+    ]
+    return keyword_matching_algorithm(query, articles, 3)
+
+
+def keyword_matching_algorithm(query, collection, limit):
     terms = {
         word 
         for word in re.findall(r"\w+", query.lower())
@@ -17,9 +31,7 @@ def search_history(query, conversation_id):
 
     matches = []
 
-    for index, event in enumerate(history):
-        text = event_text(event)
-
+    for index, text in enumerate(collection):
         words = set(re.findall(r"\w+", text))
 
         score = sum(
@@ -37,7 +49,7 @@ def search_history(query, conversation_id):
     
     matches.sort(key= lambda item: (-item['score'], -item['index']))
 
-    return {"matches": matches[:5]}
+    return {"matches": matches[:limit]}
 
 
 

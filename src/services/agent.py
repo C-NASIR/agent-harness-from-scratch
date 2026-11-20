@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from src.db import db_init
+from src.db import init
 from src.PROMPT import INSTRUCTION
 from src.services.conversations import load_conversation, save_conversations
 from src.services.model import call_model, compact_if_we_should
@@ -54,7 +54,7 @@ def run_agent(history, context, customer_message, conversation_id):
 
 def start_agent():
 
-    db_init()
+    init()
 
     conversation_id = '123'
 
